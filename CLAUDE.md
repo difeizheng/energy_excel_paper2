@@ -14,7 +14,8 @@ This is a Chinese academic paper project targeting **《计算机工程与应用
 | `数字化系统财务模型边界【抽水蓄能】v12.xlsx` | Source Excel financial model (14 sheets, 42,109 formulas) |
 | `experiment_report.txt` | All empirical statistics — **single source of truth for numbers** |
 | `ablation_results.json` | Ablation experiment results (n=299) |
-| `energy_kg_paper_skill.md` | Comprehensive writing guide with paper structure, required content, and quality rules |
+| `energy_kg_paper_skill_v2.md` | **Primary writing guide** (latest version, aligned with real experiment data) |
+| `energy_kg_paper_skill.md` | Legacy v1 writing guide (reference only, some numbers outdated) |
 | `energy_kg_system.zip` | System source code (5 modules) |
 | `fig1_data_flow.png`, `fig2_formula_dist.png`, `fig3_dependency_heatmap.png` | Paper figures |
 | `paper_draft.docx` | Current paper draft (Word format, reference only) |
@@ -51,13 +52,13 @@ Additional invariant statistics from `experiment_report.txt`:
 
 ## Writing Rules (MANDATORY)
 
-When writing or editing any paper content (`.tex` files, abstract, conclusion, etc.), **follow all guidelines in `energy_kg_paper_skill.md`**:
+When writing or editing any paper content (`.tex` files, abstract, conclusion, etc.), **follow all guidelines in `energy_kg_paper_skill_v2.md`**:
+- All ablation numbers must match `ablation_results.json`: Method A = 20.7%/7.9%/37.1%, Method B/C = 88.3%/81.7%/99.0%
 - Enforce banned-word check (0 matches for 赋能/闭环/显著提升/深度融合 etc.)
 - Maintain number consistency across all sections (see Core Claims above)
-- Follow the 7-section structure defined in Skill B-1
-- Apply the "主线闭合矩阵" — each problem must have method + experiment + conclusion
-- Use the conclusion 4-paragraph template from Skill C-1
-- Apply digital consistency checklist from Skill B-5 after any edits
+- Follow the 7-section structure defined in v2
+- Apply the conclusion 4-paragraph template from v2 Section 7
+- Apply digital consistency checklist from v2 after any edits
 
 **Key highlights:**
 - **"资本金/全投资双视角" and "跨业务Sheet现象"** must each have independent paragraphs in Section 2
