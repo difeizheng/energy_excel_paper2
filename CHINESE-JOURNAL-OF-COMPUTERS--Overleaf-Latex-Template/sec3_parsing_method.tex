@@ -1,0 +1,96 @@
+\section{\heiti Excel解析与语义理解方法}
+
+本节提出Excel解析与语义理解的完整方法框架，解决跨Sheet引用追溯和公式业务含义识别两个核心问题。方法分为两个模块：依赖图构建（模块1）和语义分类（模块2）。
+
+\subsection{\heiti Excel结构解析引擎}
+
+\textbf{三层分类规则。} 对14个工作表按计算逻辑依赖关系自动分类为输入层、计算层和输出层。分类依据为：（1）输入层——公式入度为零或极低，主要包含原始参数和时间序列数据；（2）计算层——入度和出度均较高，作为中间计算枢纽；（3）输出层——出度为零或极低，包含最终财务指标。自动分类结果与人工判定的14个Sheet三层结构完全一致。
+
+\textbf{标题提取改进。} 针对该模型标题分布在B/C列而非传统A列的特殊结构，改进了标题提取方法：扫描同行B-C列文本作为行标题，同列前3行文本作为列标题。这一改进基于对模型实际布局的观察——传统A列仅包含行号或空值，真实业务标题位于B/C列。
+
+\textbf{正则表达式跨Sheet引用提取。} 定义跨Sheet引用模式如下：
+\begin{verbatim}
+(?:'[^']+'|[a-zA-Z0-9_一-龥]+)!
+\$?[A-Z]{1,3}\$?\d+(:\$?[A-Z]{1,3}\$?\d+)?
+\end{verbatim}
+该模式匹配工作表名（含中文）加单元格引用（含绝对/相对引用），覆盖本模型9,199次跨Sheet引用的提取。
+
+\textbf{DAG构建与无环验证。} 将每个非空单元格抽象为节点，公式引用关系抽象为有向边。构建算法如下：
+
+\textbf{过程1.} DAG构建算法
+
+{\zihao{5-}
+\noindent 输入：Excel工作簿 $W$，Sheet集合 $\{S_1, S_2, \ldots, S_n\}$
+
+\noindent 输出：依赖图 $G=(V, E)$
+
+\noindent 1.\ 初始化 $V \leftarrow \emptyset, E \leftarrow \emptyset$
+
+\noindent 2.\ \textbf{for each} $S_i \in \{S_1, \ldots, S_n\}$ \textbf{do}
+
+\noindent 3.\ \quad \textbf{for each} 非空单元格 $c \in S_i$ \textbf{do}
+
+\noindent 4.\ \quad \quad $V \leftarrow V \cup \{c\}$
+
+\noindent 5.\ \quad \quad \textbf{if} $c$ 包含公式 \textbf{then}
+
+\noindent 6.\ \quad \quad \quad 提取 $c$ 引用的所有单元格 $R_c$
+
+\noindent 7.\ \quad \quad \quad \textbf{for each} $r \in R_c$ \textbf{do}
+
+\noindent 8.\ \quad \quad \quad \quad $E \leftarrow E \cup \{(r, c)\}$
+
+\noindent 9.\ \quad \quad \quad \textbf{end for}
+
+\noindent 10.\ \quad \textbf{end if}
+
+\noindent 11.\ \textbf{end for}
+
+\noindent 12.\ \textbf{end for}
+
+\noindent 13.\ 验证 $G$ 无环（拓扑排序）
+
+\noindent 14.\ 返回 $G=(V, E)$}
+
+拓扑排序验证无环后，支持以下两种路径计算：
+
+\textbf{正向追溯（计算溯源）：} 给定目标单元格 $c_t$，追溯其所有上游依赖
+$$\mathit{Upstream}(c_t) = \{c \mid \exists \text{路径 } c \to^* c_t\}$$
+
+\textbf{反向影响分析：} 给定源单元格 $c_s$，计算其影响范围
+$$\mathit{Downstream}(c_s) = \{c \mid \exists \text{路径 } c_s \to^* c\}$$
+
+\textbf{错误公式处理。} 对含\#REF!、\#NAME?等错误标记的公式（本模型289个，占比0.69\%），在DAG构建时标记为错误节点但不丢弃，保留供模型审计分析使用。错误节点的入边和出边均保留，以便分析错误传播对下游指标的影响范围。
+
+\textbf{跨Sheet依赖边定义。} 设 $S_i, S_j$ 为不同工作表，定义跨Sheet依赖边集合：
+$$E_{\mathit{cross}} = \{(u, v) \mid u \in S_i, v \in S_j, i \neq j, f(v) \text{ 引用 } u\}$$
+本模型中 $|E_{\mathit{cross}}| = 9,146$，占总边数的11.7\%。
+
+\subsection{\heiti 公式语义理解框架}
+
+公式语义理解的目标是为每个公式单元格自动识别其所属业务类型（融资计算、折旧摊销、成本计算、收入计算、税务计算、利润计算、现金流计算、投资计算、资产负债、财务指标、时间序列、参数引用共12类）。
+
+\textbf{上下文规则优先的混合分类策略。} 本文提出三层分类流水线：
+
+\textbf{第一层：上下文规则分类（覆盖率78.3\%）。} 利用Sheet名称、行标题（B/C列）、列标题（前3行）的文本特征进行规则匹配。12类业务规则如下：
+
+\begin{itemize}
+	\item \textbf{融资计算：} 行标题或列标题含"借款""还本""付息""利息"等
+	\item \textbf{折旧摊销：} 含"折旧""摊销""年限""残值"等
+	\item \textbf{成本计算：} 含"成本""费用""运维""材料"等
+	\item \textbf{收入计算：} 含"收入""电价""电量""售电"等
+	\item \textbf{税务计算：} 含"税""增值税""附加""所得税"等
+	\item \textbf{利润计算：} 含"利润""盈余""未分配"等
+	\item \textbf{现金流计算：} 含"现金流""净现金流""流入""流出"等
+	\item \textbf{投资计算：} 含"投资""资本金""建设"等
+	\item \textbf{资产负债：} 含"资产""负债""权益""应付""应收"等
+	\item \textbf{财务指标：} 含"IRR""NPV""回收期""收益率"等
+	\item \textbf{时间序列：} 含"年份""月份""期数"等时间关键词
+	\item \textbf{参数引用：} 行标题或列标题含"参数""输入""假设"等
+\end{itemize}
+
+\textbf{第二层：公式结构规则补充（覆盖部分剩余21.7\%）。} 对上下文规则未能分类的公式，使用公式语法特征（函数名、运算符、常量模式）进行补充分类。例如，含IRR/XNPV函数的公式标记为财务指标类，含SUMIF/COUNTIF的标记为聚合计算类。
+
+\textbf{第三层：LLM增强分类（覆盖高歧义公式）。} 对前两层均无法确定的高歧义公式（主要分布在时间序列Sheet的跨业务区域），调用LLM进行语义分类。该模块当前仅有框架设计，21.7\%的高歧义公式的实际分类效果有待实验验证。
+
+\textbf{跨业务Sheet处理策略。} 针对第2节发现的"跨业务Sheet"现象，本文采用行标题优先策略：当Sheet名称与行标题语义冲突时，以行标题的业务关键词为准。例如在"时间序列"Sheet中，行标题含"折旧"的公式分类为折旧摊销类，而非时间序列类。该策略减少了因Sheet名称歧义导致的错误，但在某些行标题同时包含多个业务关键词的情况下仍存在歧义，这是规则方法的天然边界。

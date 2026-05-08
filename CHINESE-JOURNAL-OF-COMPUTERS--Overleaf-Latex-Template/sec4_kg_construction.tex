@@ -1,0 +1,111 @@
+\section{\heiti 知识图谱构建}
+
+在完成Excel解析和语义分类后，核心工作是将结构化的公式依赖关系和业务语义转化为可查询、可推理的知识图谱模型，支持计算路径追溯和智能问答。
+
+\subsection{\heiti 本体定义}
+
+本文构建的能源财务模型本体 $\mathcal{O} = (\mathcal{C}, \mathcal{R}, \mathcal{I})$ 由实体类集合 $\mathcal{C}$、关系集合 $\mathcal{R}$ 和实例集合 $\mathcal{I}$ 三部分组成。
+
+\textbf{实体类集合} $\mathcal{C}$ 包含5类实体，如表~\ref{tab:kg_entities} 所示。
+
+\begin{table}[H]
+	\centering
+	\caption{知识图谱实体类定义}
+	\label{tab:kg_entities}
+	\vspace {-2.5mm}
+	\begin{center}
+		\begin{tabular}{lll}
+			\toprule
+			实体类 & 实例数 & 说明 \\
+			\hline
+			\textit{Project} & 1 & 项目（抽水蓄能电站） \\
+			\textit{Sheet} & 14 & 工作表（参数输入表、时间序列等） \\
+			\textit{Cell} & 42,109 & 单元格（公式单元格和关键数据单元格） \\
+			\textit{Function} & 10 & 函数类型（SUM, IF, IRR, NPV等） \\
+			\textit{Indicator} & 4 & 财务指标（总投资、净利润、IRR、投资回收期） \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+\end{table}
+
+\textbf{关系集合} $\mathcal{R}$ 包含6类关系，如表~\ref{tab:kg_relations} 所示。
+
+\begin{table}[H]
+	\centering
+	\caption{知识图谱关系定义}
+	\label{tab:kg_relations}
+	\vspace {-2.5mm}
+	\begin{center}
+		\begin{tabular}{lcll}
+			\toprule
+			关系名称 & 数量 & 定义域 $\to$ 值域 & 语义说明 \\
+			\hline
+			\textit{contains} & 14 & \textit{Project} $\to$ \textit{Sheet} & 项目包含工作表 \\
+			\textit{has\_cell} & 42,109 & \textit{Sheet} $\to$ \textit{Cell} & 工作表包含单元格 \\
+			\textit{depends\_on} & 9,146 & \textit{Cell} $\to$ \textit{Cell} & 公式依赖另一单元格 \\
+			\textit{uses\_function} & 13,547 & \textit{Cell} $\to$ \textit{Function} & 公式使用某函数类型 \\
+			\textit{computes} & 513 & \textit{Cell} $\to$ \textit{Indicator} & 单元格计算某财务指标 \\
+			\textit{influences} & 4 & \textit{Cell} $\to$ \textit{Cell} & 关键参数影响下游指标 \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+\end{table}
+
+\textbf{RDF三元组示例：} 以IRR计算链的部分实例为例，可生成如下三元组（Turtle语法简写）：
+
+\begin{verbatim}
+:Project_PSH  :contains  :Sheet_Profit_Equity .
+:Sheet_Profit_Equity  :has_cell  :Cell_D105 .
+:Cell_D105  :uses_function  :Function_IRR .
+:Cell_D105  :computes  :Indicator_IRR .
+:Cell_D105  :depends_on  :Cell_D52 .
+:Cell_D52  :computes  :Indicator_NetProfit .
+\end{verbatim}
+
+这六条三元组记录了"项目→利润表-资本金Sheet→D105单元格→IRR函数→计算IRR指标→依赖D52净利润"的语义链路。
+
+\textbf{关键财务指标在模型中的位置。} 表~\ref{tab:indicator_locs} 列出核心财务指标的定位信息。
+
+\begin{table}[H]
+	\centering
+	\caption{关键财务指标定位}
+	\label{tab:indicator_locs}
+	\vspace {-2.5mm}
+	\begin{center}
+		\begin{tabular}{lcl}
+			\toprule
+			指标名称 & 定位单元格数 & 示例位置 \\
+			\hline
+			总投资 & 108 & 表1-资金筹措及还本付息表!D7 \\
+			净利润 & 296 & 表5-利润表-资本金!D52 \\
+			IRR & 7 & 表5-利润表-资本金!D105 \\
+			投资回收期 & 102 & 表6-现金流量表-资本金!D42 \\
+			\bottomrule
+		\end{tabular}
+	\end{center}
+\end{table}
+
+\subsection{\heiti 计算路径追溯}
+
+基于知识图谱的依赖关系，支持财务指标计算路径的秒级追溯。给定目标财务指标（如IRR），系统通过以下两种查询实现：
+
+\textbf{正向追溯（计算溯源）：} 从指标单元格出发，沿 \textit{depends\_on} 关系递归向上追溯，获取完整计算链。查询形式为：
+\begin{verbatim}
+MATCH path = (target:Cell)-[:depends_on*]-(source:Cell)
+WHERE target.computes = 'IRR'
+RETURN path
+\end{verbatim}
+正向追溯的数学定义为：
+$$\mathit{Upstream}(c_t) = \{c \mid \exists \text{路径 } c \to^* c_t \text{ 在知识图谱中}\}$$
+
+\textbf{反向影响分析：} 从源参数单元格出发，沿 \textit{depends\_on} 关系反向追溯，获取该参数影响的所有下游计算结果。查询形式为：
+\begin{verbatim}
+MATCH path = (source:Cell)-[:depends_on*]->(target:Cell)
+WHERE source = $param_cell
+RETURN target, length(path) AS depth
+ORDER BY depth DESC
+\end{verbatim}
+反向影响的数学定义为：
+$$\mathit{Downstream}(c_s) = \{c \mid \exists \text{路径 } c_s \to^* c \text{ 在知识图谱中}\}$$
+
+\textbf{最大出度1,021的业务含义。} 本模型中出度最大的节点（1,021条出边）为参数输入表中的某利率参数单元格。该参数作为利率基准，同时影响资金筹措表中的利息计算、折旧摊销表中的融资成本、成本费用表中的财务费用等下游计算。这一参数敏感性集中特征说明：财务模型中少数关键参数对全局计算结果具有放大效应，知识图谱的依赖图可以直接量化这种影响范围，而无需人工逐表核对。

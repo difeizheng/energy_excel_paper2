@@ -1,0 +1,211 @@
+\documentclass[10.5pt,compsoc,UTF8]{CjC}
+\usepackage{CTEX}
+\usepackage{graphicx}
+\usepackage{footmisc}
+\usepackage{subfigure}
+\usepackage{url}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage[noadjust]{cite}
+\usepackage{amsmath,amsthm}
+\usepackage{amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{ccaption}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{xcolor,stfloats}
+\usepackage{comment}
+\setcounter{page}{1}
+\graphicspath{{figures/}}
+\usepackage{cuted}
+\usepackage{captionhack}
+\usepackage{epstopdf}
+\usepackage{gbt7714}
+\usepackage{stfloats}
+\usepackage{amsmath}
+\usepackage{arydshln}
+%===============================%
+
+%=======设置奇偶页页眉=======%
+\headevenname{\mbox{\quad} \hfill  \mbox{\zihao{-5}{计\quad \quad 算\quad \quad 机\quad \quad 学\quad \quad 报} \hspace {50mm} \mbox{2026 年}}}%
+\headoddname{? 期 \hfill
+匿名作者：基于知识图谱的Excel财务模型解析与语义追溯研究}
+%=======设置奇偶页页眉=======%
+
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+\setcounter{footnote}{0}
+\renewcommand\footnotelayout{\zihao{5-}}
+\newtheoremstyle{mystyle}{0pt}{0pt}{\normalfont}{1em}{\bf}{}{1em}{}
+\theoremstyle{mystyle}
+\renewcommand\figurename{figure~}
+\renewcommand{\thesubfigure}{(\alph{subfigure})}
+\newcommand{\upcite}[1]{\textsuperscript{\cite{#1}}}
+\renewcommand{\labelenumi}{(\arabic{enumi})}
+\newcommand{\tabincell}[2]{\begin{tabular}{@{}#1@{}}#2\end{tabular}}
+\newcommand{\abc}{\color{white}\vrule width 2pt}
+\renewcommand{\bibsection}{}
+\makeatletter
+\renewcommand{\@biblabel}[1]{[#1]\hfill}
+\makeatother
+\setlength\parindent{2em}
+
+% 设置表格标题前缀为"表"，图标题前缀为"图"
+\renewcommand{\tablename}{表}
+\renewcommand{\figurename}{图}
+
+\pagestyle{CjCheadings}
+\setmainfont{Times New Roman}
+
+%===========================================================%
+\begin{document}
+
+\hyphenpenalty=50000
+\makeatletter
+\newcommand\mysmall{\@setfontsize\mysmall{7}{9.5}}
+\newenvironment{tablehere}
+{\def\@captype{table}}
+
+\let\temp\footnote
+\renewcommand \footnote[1]{\temp{\zihao{-5}#1}}
+
+%=======设置首页页眉=======%
+\thispagestyle{empty}%
+\begin{table*}[!t]
+	\vspace {-13mm}
+	\onecolumn
+	\noindent\begin{tabular}{p{168mm}}
+		\zihao{5-}
+		第??卷\quad 第?期 \hfill 计\quad 算\quad 机\quad 学\quad 报\hfill Vol. ??  No. ?\\
+		\zihao{5-}
+		2026 年?月 \hfill CHINESE JOURNAL OF COMPUTERS \hfill ???. 2026\\
+		\hline\\[-5.5mm]
+		\hline\end{tabular}\end{table*}
+%=======设置首页页眉=======%
+
+%中文标题、作者与注脚
+{
+\centering
+\vspace {11mm}
+{\zihao{2} \heiti 基于知识图谱的Excel财务模型解析\\与语义追溯研究}
+
+\vskip 5mm
+
+	{\zihao{3}\fangsong 作者（匿名审稿）}
+\footnote{\noindent \zihao{6}\songti 收稿日期：\quad \quad -\quad -\quad ；最终修改稿收到日期：\quad \quad -\quad -\quad . }
+
+}%中文标题、作者与注脚
+
+\vskip 5mm
+
+\zihao{5-}{
+	\setlength{\baselineskip}{16pt}\selectfont
+	\noindent {\heiti 摘\quad 要\quad }
+	能源行业大量复杂财务决策依赖Excel模型，但其公式与业务语义之间存在结构性解耦——某真实抽水蓄能电站财务评价模型包含14个工作表、57,577个非空单元格和42,109个公式，其中9,199次跨Sheet引用导致人工追溯需要2-3人天，289个含错误公式（占比0.69%）极难全面检出。本文针对"跨Sheet引用无法追溯"和"公式业务含义不透明"两个问题，提出Excel解析与知识图谱构建方法。核心贡献有三：一是基于有向无环图的公式依赖解析引擎，成功构建62,160个节点、78,472条边的计算依赖图，验证无循环引用，支持最长730步的路径追溯；二是上下文规则优先的混合语义分类方法，在299条分层采样数据集上准确率达88.3%，较纯公式结构方法（20.7%）提升67.6个百分点，消融实验证明"公式黑盒"的本质是语法与语义的结构性解耦；三是构建包含42,138个实体、65,333条关系的财务模型知识图谱，支持秒级路径追溯和智能问答，IRR计算路径追溯响应时间<0.5秒（较人工45-60分钟效率提升超5,000倍），问答意图识别综合准确率92.3%。
+}
+
+\vspace {5mm}
+
+\zihao{5-}{\noindent
+	{\heiti 关键词\quad } Excel公式分析;知识图谱;依赖图;语义理解;财务模型;能源行业;智能问答}
+\par\noindent
+\zihao{5-}{\heiti 中图法分类号\quad } TP391\rm{\quad \quad \quad     }
+{\heiti DOI 号:\quad }
+
+\vskip 5mm
+
+\begin{center}
+	\zihao{3}{ \heiti Research on Knowledge Graph-Based Parsing and Semantic Tracing for Excel Financial Models}\\
+	\vspace {5mm}
+	\zihao{5}{ Authors (Anonymous Review) }\\
+
+\end{center}
+
+\zihao{5}{
+	\noindent {\bf Abstract}\quad Excel financial models serve as critical decision-making infrastructure in the energy sector, yet a structural disconnect exists between spreadsheet formulas and their business semantics. A real pumped-storage hydropower station financial evaluation model comprises 14 worksheets, 57,577 non-empty cells, and 42,109 formulas, of which 9,199 cross-sheet references require 2--3 person-days for manual tracing, and 289 erroneous formulas (0.69\%) are extremely difficult to detect comprehensively. This paper addresses two core problems: (1) cross-sheet references are untraceable manually, and (2) formula business semantics are opaque. The contributions are threefold. First, a directed acyclic graph (DAG)-based formula dependency parsing engine constructs a computational dependency graph of 62,160 nodes and 78,472 edges, verified to be cycle-free and supporting path tracing up to 730 steps. Second, a context-rule-priority hybrid semantic classification method achieves 88.3\% accuracy on a stratified sample of 299 items, improving by 67.6 percentage points over a pure formula-structure method (20.7\%); ablation experiments demonstrate that the essence of the "formula black-box" problem is the structural decoupling of syntax and semantics. Third, a financial model knowledge graph with 42,138 entities and 65,333 relations is constructed, supporting sub-second path tracing and intelligent Q\&A: IRR computation path tracing responds in $<$0.5\,s (over 5,000$\times$ faster than 45--60\,min manual tracing), and Q\&A intent recognition achieves 92.3\% comprehensive accuracy.
+}
+
+\vspace {5mm}
+
+\zihao{5}{
+	\noindent {\bf Keywords}\quad Excel formula analysis; knowledge graph; dependency graph; semantic understanding; financial model; energy sector; intelligent Q\&A
+	\par}
+
+\zihao{5}
+\vskip 1mm
+
+\input{sec1_introduction}
+
+\input{sec2_model_analysis}
+
+\input{sec3_parsing_method}
+
+\input{sec4_kg_construction}
+
+\input{sec5_qa_system}
+
+\input{sec6_experiment}
+
+\input{sec7_conclusion}
+
+\noindent {\zihao{5}\bf{附录 A}.}
+
+{\zihao{5-}\setlength\parindent{2em}
+	\textbf{消融实验完整结果（n=299，按Sheet分层）}
+
+	表~\ref{tab:appendix} 展示了消融实验在各Sheet上的分层结果。时间序列Sheet是错误集中区域，28/35条方法B/C错误均源于"跨业务Sheet"现象——该Sheet内嵌折旧摊销时间轴计算逻辑，导致Sheet名称与行标题语义冲突。
+
+	\begin{table}[H]
+		\centering
+		\caption{消融实验分层结果}
+		\label{tab:appendix}
+		\vspace {-2.5mm}
+		\begin{center}
+			\begin{tabular}{lccc}
+				\toprule
+				Sheet名称 & 方法A/\% & 方法B/C/\% & 错误数 \\
+				\hline
+				参数输入表 & 25.0 & 91.7 & 1 \\
+				时间序列 & 12.3 & 72.9 & 28 \\
+				投产\&达产比例 & 18.5 & 90.2 & 3 \\
+				表1-资金筹措及还本付息表 & 22.1 & 91.0 & 2 \\
+				表2-折旧摊销表 & 19.8 & 89.5 & 4 \\
+				表3-成本费用表 & 20.5 & 90.1 & 3 \\
+				表4-收入税金表 & 21.0 & 91.3 & 1 \\
+				表5-利润表-资本金 & 24.3 & 88.9 & 2 \\
+				表6-现金流量表-资本金 & 23.7 & 87.5 & 2 \\
+				\bottomrule
+			\end{tabular}
+		\end{center}
+	\end{table}
+}
+
+%\begin{biography}[yourphotofilename.jpg]
+%	\noindent
+%	\textbf{Author 1}\ \ (Anonymized for review.)
+%\end{biography}
+%
+%\begin{biography}[yourphotofilename.jpg]
+%	\noindent
+%	\textbf{Author 2}\ \ (Anonymized for review.)
+%\end{biography}
+%
+%\begin{biography}[yourphotofilename.jpg]
+%	\noindent
+%	\textbf{Author 3}\ \ (Anonymized for review.)
+%\end{biography}
+
+\zihao{5}
+\noindent \textbf{Background}
+
+\zihao{5-}{
+	\setlength\parindent{2em}
+	This paper addresses the problem of knowledge extraction and semantic tracing for Excel-based financial models in the energy sector. Excel spreadsheets have long been the de facto standard for financial evaluation in energy projects, but their potential as structured knowledge sources has not been fully exploited.
+
+	With China's pumped-storage hydropower installed capacity exceeding 50 million kilowatts, the scale and complexity of financial evaluation models have grown significantly. The model studied in this paper comprises 42,109 formulas and 9,199 cross-sheet references, requiring 2--3 person-days for manual audit. Existing spreadsheet analysis methods focus on formula correctness and lack semantic understanding capabilities, resulting in a severe knowledge extraction gap.
+
+	This paper proposes a knowledge graph-driven approach that transforms Excel financial models into searchable, auditable, and traceable knowledge assets. The method integrates DAG-based dependency parsing, context-rule-priority semantic classification, and knowledge graph construction. Experimental results demonstrate that the proposed method achieves 88.3\% semantic classification accuracy (vs. 20.7\% for pure formula-structure methods), constructs a knowledge graph of 42,138 entities and 65,333 relations, and enables sub-second IRR computation path tracing (over 5,000$\times$ faster than manual tracing), providing a systematic solution for building an intelligent financial model audit loop.}
+
+\end{document}
